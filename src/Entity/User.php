@@ -9,6 +9,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @ORM\Table(name="users")
+ * @ORM\HasLifecycleCallbacks
  * @ORM\Entity
  */
 class User implements UserInterface
@@ -57,10 +58,33 @@ class User implements UserInterface
      */
     private $gender;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Mood", mappedBy="user")
+     */
+    private $moods;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Reason", mappedBy="user")
+     */
+    private $reasons;
+
+    /**
+     * @ORM\Column(type="datetime")
+     */
+    private $created_at;
+
+    /**
+     * @ORM\Column(type="datetime")
+     */
+    private $updated_at;
+
+
     public function __construct($username)
     {
         $this->isActive = true;
         $this->username = $username;
+        $this->moods = new ArrayCollection();
+        $this->reasons = new ArrayCollection();
     }
 
     public function getId()
@@ -158,4 +182,101 @@ class User implements UserInterface
         return $this;
     }
 
+    /**
+     * @return Collection|Mood[]
+     */
+    public function getMoods(): Collection
+    {
+        return $this->moods;
+    }
+
+    public function addMood(Mood $mood): self
+    {
+        if (!$this->moods->contains($mood)) {
+            $this->moods[] = $mood;
+            $mood->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMood(Mood $mood): self
+    {
+        if ($this->moods->contains($mood)) {
+            $this->moods->removeElement($mood);
+            // set the owning side to null (unless already changed)
+            if ($mood->getUser() === $this) {
+                $mood->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Reason[]
+     */
+    public function getReasons(): Collection
+    {
+        return $this->reasons;
+    }
+
+    public function addReason(Reason $reason): self
+    {
+        if (!$this->reasons->contains($reason)) {
+            $this->reasons[] = $reason;
+            $reason->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeReason(Reason $reason): self
+    {
+        if ($this->reasons->contains($reason)) {
+            $this->reasons->removeElement($reason);
+            // set the owning side to null (unless already changed)
+            if ($reason->getUser() === $this) {
+                $reason->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->created_at;
+    }
+
+    public function setCreatedAt(\DateTimeInterface $created_at): self
+    {
+        $this->created_at = $created_at;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeInterface
+    {
+        return $this->updated_at;
+    }
+
+    public function setUpdatedAt(\DateTimeInterface $updated_at): self
+    {
+        $this->updated_at = $updated_at;
+
+        return $this;
+    }
+
+    /**
+     * @ORM\PrePersist
+     * @ORM\PreUpdate
+     */
+    public function updatedTimestamps(): void
+    {
+        $this->setUpdatedAt(new \DateTime('now'));
+        if ($this->getCreatedAt() === null) {
+            $this->setCreatedAt(new \DateTime('now'));
+        }
+    }
 }
