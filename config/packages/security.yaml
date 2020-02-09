@@ -13,16 +13,19 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
-        json:
+
+        login:
             pattern:  ^/api/login
             stateless: true
             anonymous: true
-            form_login:
-                check_path: /api/login
-                username_parameter: email
-                password_parameter: password
-                success_handler: lexik_jwt_authentication.handler.authentication_success
-                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+            provider: entity_provider
+            json_login:
+                check_path:               /api/login
+                username_path:            email
+                password_path:            password
+                success_handler:          lexik_jwt_authentication.handler.authentication_success
+                failure_handler:          lexik_jwt_authentication.handler.authentication_failure
+                require_previous_session: false
 
 
         register:
