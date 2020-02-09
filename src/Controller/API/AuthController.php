@@ -2,6 +2,7 @@
 namespace App\Controller\API;
 
 use App\Entity\User;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,33 +25,28 @@ class AuthController extends AbstractController
 
         $em = $this->getDoctrine()->getManager();
         try {
-            $username = $data['username'];
             $password = $data['password'];
-            $firstName = $data['first_name'];
-            $lastName = $data['last_name'];
-            $phone = $data['phone_number'];
             $email = $data['email'];
-            $gender = $data['gender'];
         } catch (\Exception $exception) {
             return new JsonResponse(['errors' => 'ERROR'], JsonResponse::HTTP_BAD_REQUEST);
         }
 
         $errorMessages = $this->validateData($data, $validator);
-
         if ($errorMessages) {
             return new JsonResponse(['errors' => $errorMessages], JsonResponse::HTTP_BAD_REQUEST);
         } else {
-            $user = new User($username);
-            $user
-                ->setFirstName($firstName)
-                ->setLastName($lastName)
-                ->setPhoneNumber($phone)
-                ->setEmail($email)
-                ->setGender($gender)
-                ->setPassword($encoder->encodePassword($user, $password));
-            $em->persist($user);
-            $em->flush();
-
+            try {
+                $user = new User();
+                $user
+                    ->setEmail($email)
+                    ->setPassword($encoder->encodePassword($user, $password));
+                $em->persist($user);
+                $em->flush();
+            } catch (UniqueConstraintViolationException $exception) {
+                return new JsonResponse(['errors' => 'Already exist!'], JsonResponse::HTTP_CONFLICT);
+            } catch (\Exception $exception) {
+                return new JsonResponse(['errors' => 'Internal Error'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+            }
             return new JsonResponse(['message'=>'User created'], JsonResponse::HTTP_CREATED);
         }
     }
@@ -58,13 +54,8 @@ class AuthController extends AbstractController
     private function validateData(array $data, ValidatorInterface $validator)
     {
         $constraints = new Assert\Collection([
-            'username' => [new Assert\NotBlank, new Assert\Length(['min' => 5])],
-            'password' => [new Assert\Length(['min' => 6]), new Assert\notBlank],
-            'first_name' => [new Assert\notBlank],
-            'last_name' => [new Assert\notBlank],
-            'phone_number' => [new Assert\notBlank],
-            'email' => [new Assert\notBlank, new Assert\Email()],
-            'gender'=> [new Assert\Choice(['choices'=>['male', 'female']]), new Assert\notBlank]
+            'password' => [new Assert\Length(['min' => 6])],
+            'email' => [new Assert\Email()],
         ]);
 
         $violations = $validator->validate($data, $constraints);

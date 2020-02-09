@@ -21,7 +21,7 @@ class User implements UserInterface
      */
     private $id;
     /**
-     * @ORM\Column(type="string", length=25, unique=true)
+     * @ORM\Column(type="string", length=25, unique=true, nullable=true)
      */
     private $username;
     /**
@@ -34,12 +34,12 @@ class User implements UserInterface
     private $isActive;
 
     /**
-     * @ORM\Column(type="string", length=255)
+     * @ORM\Column(type="string", length=255, nullable=true)
      */
     private $first_name;
 
     /**
-     * @ORM\Column(type="string", length=255)
+     * @ORM\Column(type="string", length=255, nullable=true)
      */
     private $last_name;
 
@@ -49,12 +49,12 @@ class User implements UserInterface
     private $email;
 
     /**
-     * @ORM\Column(type="string", length=100, unique=true)
+     * @ORM\Column(type="string", length=100, unique=true, nullable=true)
      */
     private $phone_number;
 
     /**
-     * @ORM\Column(type="string", length=30, columnDefinition="enum('male', 'female')")
+     * @ORM\Column(type="string", length=30, columnDefinition="enum('male', 'female')", nullable=true)
      */
     private $gender;
 
@@ -79,10 +79,9 @@ class User implements UserInterface
     private $updated_at;
 
 
-    public function __construct($username)
+    public function __construct()
     {
         $this->isActive = true;
-        $this->username = $username;
         $this->moods = new ArrayCollection();
         $this->reasons = new ArrayCollection();
     }
